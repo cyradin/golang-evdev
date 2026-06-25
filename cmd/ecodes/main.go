@@ -9,6 +9,7 @@ import (
 	"html/template"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 
 	"golang.org/x/sys/unix"
@@ -85,25 +86,17 @@ func getCodes(headers []string) ([]Code, error) {
 	var result []Code
 
 	for _, h := range headers {
-		file, err := os.Open(h)
+		abs, err := filepath.Abs(h)
+		if err != nil {
+			return nil, fmt.Errorf("get absolute path: %w", err)
+		}
+
+		codes, err := readHeader(abs)
 		if err != nil {
 			continue
 		}
-		defer file.Close()
 
-		scanner := bufio.NewScanner(file)
-
-		for scanner.Scan() {
-			line := scanner.Text()
-
-			m := macroRegex.FindStringSubmatch(line)
-			if m != nil {
-				result = append(result, Code{
-					Name:  m[1],
-					Value: m[2],
-				})
-			}
-		}
+		result = append(result, codes...)
 	}
 
 	if len(result) == 0 {
@@ -133,15 +126,13 @@ func runtimeGOOSArch() string {
 }
 
 func charsToString(ca []byte) string {
-	s := make([]byte, len(ca))
-	var i int
-	for i = 0; i < len(ca); i++ {
+	for i := range len(ca) {
 		if ca[i] == 0 {
-			break
+			return string(ca[:i])
 		}
-		s[i] = byte(ca[i])
 	}
-	return string(s[:i])
+
+	return string(ca)
 }
 
 func loadTemplate() (*template.Template, error) {
@@ -151,4 +142,36 @@ func loadTemplate() (*template.Template, error) {
 	}
 
 	return template.New("ecodes").Parse(string(data))
+}
+
+func readHeader(path string) ([]Code, error) {
+	// #nosec G304 G703 -- reading trusted system headers only
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() { _ = file.Close() }()
+
+	var result []Code
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		m := macroRegex.FindStringSubmatch(line)
+		if m != nil {
+			result = append(result, Code{
+				Name:  m[1],
+				Value: m[2],
+			})
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("scan file %s: %w", path, err)
+	}
+
+	return result, nil
 }

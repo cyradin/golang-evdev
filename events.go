@@ -14,7 +14,8 @@ type InputEvent struct {
 }
 
 // Get a useful description for an input event. Example:
-//   event at 1347905437.435795, code 01, type 02, val 02
+//
+//	event at 1347905437.435795, code 01, type 02, val 02
 func (ev *InputEvent) String() string {
 	return fmt.Sprintf("event at %d.%d, code %02d, type %02d, val %02d",
 		ev.Time.Sec, ev.Time.Usec, ev.Code, ev.Type, ev.Value)
@@ -44,6 +45,7 @@ func (kev *KeyEvent) New(ev *InputEvent) {
 	kev.Keycode = 0 // :todo
 	kev.Scancode = ev.Code
 
+	//nolint:mnd
 	switch ev.Value {
 	case 0:
 		kev.State = KeyUp
@@ -57,6 +59,7 @@ func (kev *KeyEvent) New(ev *InputEvent) {
 func NewKeyEvent(ev *InputEvent) *KeyEvent {
 	kev := &KeyEvent{}
 	kev.New(ev)
+
 	return kev
 }
 
@@ -90,6 +93,7 @@ func (rev *RelEvent) New(ev *InputEvent) {
 func NewRelEvent(ev *InputEvent) *RelEvent {
 	rev := &RelEvent{}
 	rev.New(ev)
+
 	return rev
 }
 
@@ -101,7 +105,7 @@ func (ev *RelEvent) String() string {
 
 // TODO: Make this work
 
-var EventFactory map[uint16]interface{} = make(map[uint16]interface{})
+var EventFactory map[uint16]any = make(map[uint16]any)
 
 func init() {
 	EventFactory[uint16(EV_KEY)] = NewKeyEvent

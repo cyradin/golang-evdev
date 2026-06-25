@@ -3,6 +3,8 @@ package evdev
 import "testing"
 
 func TestAccess(t *testing.T) {
+	t.Parallel()
+
 	if KEY_A != ecodes["KEY_A"] {
 		t.Error()
 	}

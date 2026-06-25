@@ -1,5 +1,4 @@
 //go:build linux
-// +build linux
 
 package evdev
 
@@ -35,6 +34,7 @@ type InputDevice struct {
 
 // Open an evdev input device.
 func Open(devnode string) (*InputDevice, error) {
+	// #nosec G304 -- devnode comes from trusted kernel enumeration (/sys or /proc)
 	f, err := os.Open(devnode)
 	if err != nil {
 		return nil, err
@@ -48,6 +48,7 @@ func Open(devnode string) (*InputDevice, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	err = dev.set_device_capabilities()
 	if err != nil {
 		return nil, err
@@ -61,14 +62,12 @@ func (dev *InputDevice) Read() ([]InputEvent, error) {
 	events := make([]InputEvent, 16)
 	buffer := make([]byte, eventsize*16)
 
-	_, err := dev.File.Read(buffer)
-	if err != nil {
-		return events, err
+	if _, err := dev.File.Read(buffer); err != nil {
+		return nil, err
 	}
 
 	b := bytes.NewBuffer(buffer)
-	err = binary.Read(b, binary.LittleEndian, &events)
-	if err != nil {
+	if err := binary.Read(b, binary.LittleEndian, &events); err != nil {
 		return events, err
 	}
 
@@ -80,7 +79,7 @@ func (dev *InputDevice) Read() ([]InputEvent, error) {
 		}
 	}
 
-	return events, err
+	return events, nil
 }
 
 // Read and return a single input event.
@@ -88,18 +87,16 @@ func (dev *InputDevice) ReadOne() (*InputEvent, error) {
 	event := InputEvent{}
 	buffer := make([]byte, eventsize)
 
-	_, err := dev.File.Read(buffer)
-	if err != nil {
+	if _, err := dev.File.Read(buffer); err != nil {
 		return &event, err
 	}
 
 	b := bytes.NewBuffer(buffer)
-	err = binary.Read(b, binary.LittleEndian, &event)
-	if err != nil {
+	if err := binary.Read(b, binary.LittleEndian, &event); err != nil {
 		return &event, err
 	}
 
-	return &event, err
+	return &event, nil
 }
 
 // Get a useful description for an input device. Example:
@@ -110,11 +107,11 @@ func (dev *InputDevice) ReadOne() (*InputEvent, error) {
 //	  bus 0x3, vendor 0x46d, product 0xc069, version 0x110
 //	  events EV_KEY 1, EV_SYN 0, EV_REL 2, EV_MSC 4
 func (dev *InputDevice) String() string {
-	evtypes := make([]string, 0)
-
+	evtypes := make([]string, 0, len(dev.Capabilities))
 	for ev := range dev.Capabilities {
 		evtypes = append(evtypes, fmt.Sprintf("%s %d", ev.Name, ev.Type))
 	}
+
 	evtypes_s := strings.Join(evtypes, ", ")
 
 	return fmt.Sprintf(
@@ -144,7 +141,8 @@ func (dev *InputDevice) set_device_capabilities() error {
 	}
 
 	// Build a map of the device's capabilities
-	for evtype := 0; evtype < EV_MAX; evtype++ {
+	for evtype := range EV_MAX {
+		//nolint:mnd
 		if evbits[evtype/8]&(1<<uint(evtype%8)) != 0 {
 			eventcodes := make([]CapabilityCode, 0)
 
@@ -158,7 +156,8 @@ func (dev *InputDevice) set_device_capabilities() error {
 				return err
 			}
 
-			for evcode := 0; evcode < KEY_MAX; evcode++ {
+			for evcode := range KEY_MAX {
+				//nolint:mnd
 				if codebits[evcode/8]&(1<<uint(evcode%8)) != 0 {
 					c := CapabilityCode{evcode, ByEventType[evtype][evcode]}
 					eventcodes = append(eventcodes, c)
@@ -172,6 +171,7 @@ func (dev *InputDevice) set_device_capabilities() error {
 	}
 
 	dev.Capabilities = capabilities
+
 	return nil
 }
 
@@ -204,10 +204,11 @@ func (dev *InputDevice) set_device_info() error {
 	dev.Version = info.version
 
 	ev_version := new(int)
-	err = ioctl(dev.File.Fd(), uintptr(EVIOCGVERSION), unsafe.Pointer(ev_version))
-	if err != 0 {
+
+	if err := ioctl(dev.File.Fd(), uintptr(EVIOCGVERSION), unsafe.Pointer(ev_version)); err != 0 {
 		return err
 	}
+
 	dev.EvdevVersion = *ev_version
 
 	return nil
@@ -275,7 +276,7 @@ func IsInputDevice(path string) bool {
 	}
 
 	m := fi.Mode()
-	if m&os.ModeCharDevice == 0 { //nolint:gosimple
+	if m&os.ModeCharDevice == 0 { //nolint:staticcheck
 		return false
 	}
 
@@ -286,12 +287,12 @@ func IsInputDevice(path string) bool {
 // deviceglob (default '/dev/input/event*').
 func ListInputDevicePaths(device_glob string) ([]string, error) {
 	paths, err := filepath.Glob(device_glob)
-
 	if err != nil {
 		return nil, err
 	}
 
 	devices := make([]string, 0)
+
 	for _, path := range paths {
 		if IsInputDevice(path) {
 			devices = append(devices, path)

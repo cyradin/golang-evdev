@@ -1,5 +1,4 @@
 //go:build linux
-// +build linux
 
 // Input device event monitor.
 package main
@@ -19,29 +18,37 @@ const (
 )
 
 // Select a device from a list of accessible input devices.
+//
+//nolint:forbidigo
 func select_device() (*evdev.InputDevice, error) {
 	devices, _ := evdev.ListInputDevices(device_glob)
 
 	lines := make([]string, 0)
 	max := 0
+
 	if len(devices) > 0 {
 		for i := range devices {
 			dev := devices[i]
 			str := fmt.Sprintf("%-3d %-20s %-35s %s", i, dev.Fn, dev.Name, dev.Phys)
+
 			if len(str) > max {
 				max = len(str)
 			}
+
 			lines = append(lines, str)
 		}
+
 		fmt.Printf("%-3s %-20s %-35s %s\n", "ID", "Device", "Name", "Phys")
 		fmt.Print(strings.Repeat("-", max) + "\n")
 		fmt.Print(strings.Join(lines, "\n") + "\n")
 
 		var choice int
+
 		choice_max := len(lines) - 1
 
 	ReadChoice:
 		fmt.Printf("Select device [0-%d]: ", choice_max)
+
 		_, err := fmt.Scan(&choice)
 		if err != nil || choice > choice_max || choice < 0 {
 			goto ReadChoice
@@ -51,9 +58,11 @@ func select_device() (*evdev.InputDevice, error) {
 	}
 
 	errmsg := fmt.Sprintf("no accessible input devices found by %s", device_glob)
+
 	return nil, errors.New(errmsg)
 }
 
+//nolint:forbidigo
 func format_event(ev *evdev.InputEvent) string {
 	var res, f, code_name string
 
@@ -67,6 +76,7 @@ func format_event(ev *evdev.InputEvent) string {
 		} else {
 			f = "time %d.%-8d --------- %s --------"
 		}
+
 		return fmt.Sprintf(f, ev.Time.Sec, ev.Time.Usec, evdev.SYN[code])
 	case evdev.EV_KEY:
 		val, haskey := evdev.KEY[code]
@@ -96,11 +106,15 @@ func format_event(ev *evdev.InputEvent) string {
 	return res
 }
 
+//nolint:forbidigo
 func main() {
-	var dev *evdev.InputDevice
-	var events []evdev.InputEvent
-	var err error
+	var (
+		dev    *evdev.InputDevice
+		events []evdev.InputEvent
+		err    error
+	)
 
+	//nolint:mnd
 	switch len(os.Args) {
 	case 1:
 		dev, err = select_device()
@@ -132,6 +146,7 @@ func main() {
 
 	for ctype, codes := range dev.Capabilities {
 		fmt.Printf("  Type %s %d\n", ctype.Name, ctype.Type)
+
 		for i := range codes {
 			fmt.Printf("   Code %d %s\n", codes[i].Code, codes[i].Name)
 		}
@@ -145,6 +160,7 @@ func main() {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+
 		for i := range events {
 			str := format_event(&events[i])
 			fmt.Println(str)

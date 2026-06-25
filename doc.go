@@ -5,6 +5,5 @@ generated in the kernel directly to userspace through character
 devices that are typically located in /dev/input/.
 
 Please refer to the godoc examples and the bin/evtest example program.
-
 */
 package evdev
