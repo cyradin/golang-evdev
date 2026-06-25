@@ -1,5 +1,3 @@
-// -*- mode: go; -*-
-
 // Integer constants defined in linux/input.h and linux/input-event-codes.h can be accessed
 // directly as constants or through the provided reverse and forward mappings:
 
@@ -11,18 +9,22 @@
 //   evdev.EV[evdev.EV_KEY]  // "EV_KEY"
 //   evdev.ByEventType[EV_REL][0]  // "REL_X"
 //
-// Generated on: ${UNAME}
+// Generated on: {{ .Uname }}
 
 package evdev
 
 import "strings"
 
 const (
-${CODES}
+{{- range .Codes }}
+{{ .Name }} = {{ .Value }}
+{{- end }}
 )
 
-var ecodes = map[string] int {
-${CODEMAP}
+var ecodes = map[string]int{
+{{- range .Codes }}
+"{{ .Name }}": {{ .Name }},
+{{- end }}
 }
 
 
@@ -41,7 +43,7 @@ var BUS = map[int]string {}
 var SYN = map[int]string {}
 var FF = map[int]string {}
 
-var ByEventType = map[int] map[int]string {
+var ByEventType = map[int]map[int]string {
 	EV_KEY: KEY,
 	EV_ABS: ABS,
 	EV_REL: REL,

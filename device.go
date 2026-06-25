@@ -1,3 +1,4 @@
+//go:build linux
 // +build linux
 
 package evdev
@@ -74,7 +75,7 @@ func (dev *InputDevice) Read() ([]InputEvent, error) {
 	// remove trailing structures
 	for i := range events {
 		if events[i].Time.Sec == 0 {
-			events = append(events[:i])
+			events = events[:i]
 			break
 		}
 	}
@@ -102,11 +103,12 @@ func (dev *InputDevice) ReadOne() (*InputEvent, error) {
 }
 
 // Get a useful description for an input device. Example:
-//   InputDevice /dev/input/event3 (fd 3)
-//     name Logitech USB Laser Mouse
-//     phys usb-0000:00:12.0-2/input0
-//     bus 0x3, vendor 0x46d, product 0xc069, version 0x110
-//     events EV_KEY 1, EV_SYN 0, EV_REL 2, EV_MSC 4
+//
+//	InputDevice /dev/input/event3 (fd 3)
+//	  name Logitech USB Laser Mouse
+//	  phys usb-0000:00:12.0-2/input0
+//	  bus 0x3, vendor 0x46d, product 0xc069, version 0x110
+//	  events EV_KEY 1, EV_SYN 0, EV_REL 2, EV_MSC 4
 func (dev *InputDevice) String() string {
 	evtypes := make([]string, 0)
 
@@ -191,7 +193,7 @@ func (dev *InputDevice) set_device_info() error {
 	}
 
 	// it's ok if the topology info is not available
-	ioctl(dev.File.Fd(), uintptr(EVIOCGPHYS), unsafe.Pointer(phys))
+	_ = ioctl(dev.File.Fd(), uintptr(EVIOCGPHYS), unsafe.Pointer(phys))
 
 	dev.Name = bytes_to_string(name)
 	dev.Phys = bytes_to_string(phys)
@@ -212,12 +214,13 @@ func (dev *InputDevice) set_device_info() error {
 }
 
 // Get repeat rate as a two element array.
-//   [0] repeat rate in characters per second
-//   [1] amount of time that a key must be depressed before it will start
-//       to repeat (in milliseconds)
+//
+//	[0] repeat rate in characters per second
+//	[1] amount of time that a key must be depressed before it will start
+//	    to repeat (in milliseconds)
 func (dev *InputDevice) GetRepeatRate() *[2]uint {
 	repeat_delay := new([2]uint)
-	ioctl(dev.File.Fd(), uintptr(EVIOCGREP), unsafe.Pointer(repeat_delay))
+	_ = ioctl(dev.File.Fd(), uintptr(EVIOCGREP), unsafe.Pointer(repeat_delay))
 
 	return repeat_delay
 }
@@ -226,7 +229,7 @@ func (dev *InputDevice) GetRepeatRate() *[2]uint {
 func (dev *InputDevice) SetRepeatRate(repeat, delay uint) {
 	repeat_delay := new([2]uint)
 	repeat_delay[0], repeat_delay[1] = repeat, delay
-	ioctl(dev.File.Fd(), uintptr(EVIOCSREP), unsafe.Pointer(repeat_delay))
+	_ = ioctl(dev.File.Fd(), uintptr(EVIOCSREP), unsafe.Pointer(repeat_delay))
 }
 
 // Grab the input device exclusively.
@@ -258,29 +261,9 @@ type CapabilityCode struct {
 	Name string
 }
 
-type AbsInfo struct {
-	value      int32
-	minimum    int32
-	maximum    int32
-	fuzz       int32
-	flat       int32
-	resolution int32
-}
-
 // Corresponds to the input_id struct.
 type device_info struct {
 	bustype, vendor, product, version uint16
-}
-
-// Return the keys of a map as a slice (dict.keys())
-func keys(cap *map[int][]int) []int {
-	slice := make([]int, 0)
-
-	for key := range *cap {
-		slice = append(slice, key)
-	}
-
-	return slice
 }
 
 // Determine if a path exist and is a character input device.
@@ -292,7 +275,7 @@ func IsInputDevice(path string) bool {
 	}
 
 	m := fi.Mode()
-	if m&os.ModeCharDevice == 0 {
+	if m&os.ModeCharDevice == 0 { //nolint:gosimple
 		return false
 	}
 

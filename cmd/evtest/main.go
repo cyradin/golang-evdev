@@ -34,8 +34,8 @@ func select_device() (*evdev.InputDevice, error) {
 			lines = append(lines, str)
 		}
 		fmt.Printf("%-3s %-20s %-35s %s\n", "ID", "Device", "Name", "Phys")
-		fmt.Printf(strings.Repeat("-", max) + "\n")
-		fmt.Printf(strings.Join(lines, "\n") + "\n")
+		fmt.Print(strings.Repeat("-", max) + "\n")
+		fmt.Print(strings.Join(lines, "\n") + "\n")
 
 		var choice int
 		choice_max := len(lines) - 1
@@ -130,12 +130,12 @@ func main() {
 	fmt.Printf("Repeat settings: repeat %d. delay %d\n", repeat_info[0], repeat_info[1])
 	fmt.Printf("Device capabilities:\n")
 
-	// for ctype, codes := range dev.Capabilities {
-	// 	fmt.Printf("  Type %s %d\n", ctype.Name, ctype.Type)
-	// 	for i := range codes {
-	// 		fmt.Printf("   Code %d %s\n", codes[i].Code, codes[i].Name)
-	// 	}
-	// }
+	for ctype, codes := range dev.Capabilities {
+		fmt.Printf("  Type %s %d\n", ctype.Name, ctype.Type)
+		for i := range codes {
+			fmt.Printf("   Code %d %s\n", codes[i].Code, codes[i].Name)
+		}
+	}
 
 	fmt.Printf("Listening for events ...\n")
 
@@ -151,16 +151,3 @@ func main() {
 		}
 	}
 }
-
-// print('Device capabilities:')
-// for type, codes in device.capabilities(verbose=True).items():
-//     print('  Type {} {}:'.format(*type))
-//     for i in codes:
-//         if isinstance(i[1], AbsInfo):
-//             print('    Code {:<4} {}:'.format(*i[0]))
-//             print('      {}'.format(i[1]))
-//         else:
-//             print('    Code {:<4} {}'.format(*i))
-//     print('')
-//
-//
