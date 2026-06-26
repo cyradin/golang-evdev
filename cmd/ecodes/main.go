@@ -126,13 +126,9 @@ func runtimeGOOSArch() string {
 }
 
 func charsToString(ca []byte) string {
-	for i := range len(ca) {
-		if ca[i] == 0 {
-			return string(ca[:i])
-		}
-	}
+	idx := bytes.IndexByte(ca[:], 0)
 
-	return string(ca)
+	return string(ca[:idx])
 }
 
 func loadTemplate() (*template.Template, error) {

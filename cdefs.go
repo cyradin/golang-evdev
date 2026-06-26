@@ -17,18 +17,9 @@ package evdev
  static int _EVIOCSABS(int abs)    {return EVIOCSABS(abs);}
 */
 import "C"
-import "syscall"
-import "unsafe"
-
-type _InputEvent C.struct_input_event
-type _InputAbsinfo C.struct_input_absinfo
-type _InputId C.struct_input_id
-type _InputKeymapEntry C.struct_input_keymap_entry
-
-const (
-	sizeofInputAbsinfo     = C.sizeof_struct_input_absinfo
-	sizeofInputId          = C.sizeof_struct_input_id
-	sizeofInputKeymapEntry = C.sizeof_struct_input_keymap_entry
+import (
+	"syscall"
+	"unsafe"
 )
 
 const MAX_NAME_SIZE = 256

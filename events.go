@@ -16,9 +16,9 @@ type InputEvent struct {
 // Get a useful description for an input event. Example:
 //
 //	event at 1347905437.435795, code 01, type 02, val 02
-func (ev *InputEvent) String() string {
+func (e *InputEvent) String() string {
 	return fmt.Sprintf("event at %d.%d, code %02d, type %02d, val %02d",
-		ev.Time.Sec, ev.Time.Usec, ev.Code, ev.Type, ev.Value)
+		e.Time.Sec, e.Time.Usec, e.Code, e.Type, e.Value)
 }
 
 var eventsize = int(unsafe.Sizeof(InputEvent{}))
@@ -40,19 +40,19 @@ type KeyEvent struct {
 	State    KeyEventState
 }
 
-func (kev *KeyEvent) New(ev *InputEvent) {
-	kev.Event = ev
-	kev.Keycode = 0 // :todo
-	kev.Scancode = ev.Code
+func (e *KeyEvent) New(ev *InputEvent) {
+	e.Event = ev
+	e.Keycode = 0 // :todo
+	e.Scancode = ev.Code
 
 	//nolint:mnd
 	switch ev.Value {
 	case 0:
-		kev.State = KeyUp
+		e.State = KeyUp
 	case 2:
-		kev.State = KeyHold
+		e.State = KeyHold
 	case 1:
-		kev.State = KeyDown
+		e.State = KeyDown
 	}
 }
 
@@ -63,10 +63,10 @@ func NewKeyEvent(ev *InputEvent) *KeyEvent {
 	return kev
 }
 
-func (ev *KeyEvent) String() string {
+func (e *KeyEvent) String() string {
 	state := "unknown"
 
-	switch ev.State {
+	switch e.State {
 	case KeyUp:
 		state = "up"
 	case KeyHold:
@@ -76,8 +76,8 @@ func (ev *KeyEvent) String() string {
 	}
 
 	return fmt.Sprintf("key event at %d.%d, %d (%d), (%s)",
-		ev.Event.Time.Sec, ev.Event.Time.Usec,
-		ev.Scancode, ev.Event.Code, state)
+		e.Event.Time.Sec, e.Event.Time.Usec,
+		e.Scancode, e.Event.Code, state)
 }
 
 // RelEvents are used to describe relative axis value changes,
@@ -86,8 +86,8 @@ type RelEvent struct {
 	Event *InputEvent
 }
 
-func (rev *RelEvent) New(ev *InputEvent) {
-	rev.Event = ev
+func (e *RelEvent) New(ev *InputEvent) {
+	e.Event = ev
 }
 
 func NewRelEvent(ev *InputEvent) *RelEvent {
@@ -97,10 +97,10 @@ func NewRelEvent(ev *InputEvent) *RelEvent {
 	return rev
 }
 
-func (ev *RelEvent) String() string {
+func (e *RelEvent) String() string {
 	return fmt.Sprintf("relative axis event at %d.%d, %s",
-		ev.Event.Time.Sec, ev.Event.Time.Usec,
-		REL[int(ev.Event.Code)])
+		e.Event.Time.Sec, e.Event.Time.Usec,
+		REL[int(e.Event.Code)])
 }
 
 // TODO: Make this work
