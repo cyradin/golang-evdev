@@ -126,7 +126,7 @@ func runtimeGOOSArch() string {
 }
 
 func charsToString(ca []byte) string {
-	idx := bytes.IndexByte(ca[:], 0)
+	idx := bytes.IndexByte(ca, 0)
 
 	return string(ca[:idx])
 }
