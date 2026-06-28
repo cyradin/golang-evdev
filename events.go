@@ -10,6 +10,8 @@ import (
 	"unsafe"
 )
 
+var ErrReadEvents = fmt.Errorf("read events")
+
 type InputEvent struct {
 	Time  syscall.Timeval // time in seconds since epoch at which event occurred
 	Type  uint16          // event type - one of ecodes.EV_*
@@ -150,7 +152,7 @@ func (r *EventReader) Read() iter.Seq2[InputEvent, error] {
 
 			if err != nil {
 				if !errors.Is(err, io.EOF) {
-					yield(InputEvent{}, fmt.Errorf("read error: %w", err))
+					yield(InputEvent{}, fmt.Errorf("%w: %w", ErrReadEvents, err))
 				}
 
 				return
@@ -172,10 +174,6 @@ func (r *EventReader) process(n int, yield func(InputEvent, error) bool) error {
 	}
 
 	for i := range cnt {
-		if tempEvents[i].IsEmpty() {
-			break
-		}
-
 		if !yield(tempEvents[i], nil) {
 			return nil
 		}
