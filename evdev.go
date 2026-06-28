@@ -5,30 +5,6 @@ import (
 	"path/filepath"
 )
 
-// Open an evdev input device.
-func Open(devnode string) (*InputDevice, error) {
-	// #nosec G304 -- devnode comes from trusted kernel enumeration (/sys or /proc)
-	f, err := os.Open(devnode)
-	if err != nil {
-		return nil, err
-	}
-
-	dev := InputDevice{
-		Fn:   devnode,
-		File: f,
-	}
-
-	if err := dev.set_device_info(); err != nil {
-		return nil, err
-	}
-
-	if err := dev.set_device_capabilities(); err != nil {
-		return nil, err
-	}
-
-	return &dev, nil
-}
-
 // Return a list of accessible input device names matched by
 // deviceglob (default '/dev/input/event*').
 func ListInputDevicePaths(device_glob string) ([]string, error) {
@@ -60,7 +36,7 @@ func ListInputDevices(deviceGlobArg ...string) ([]*InputDevice, error) {
 	devices := make([]*InputDevice, 0)
 
 	for i := range fns {
-		dev, err := Open(fns[i])
+		dev, err := NewInputDevice(fns[i])
 		if err == nil {
 			devices = append(devices, dev)
 		}

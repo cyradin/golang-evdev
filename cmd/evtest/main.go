@@ -122,7 +122,7 @@ func main() {
 			os.Exit(1)
 		}
 	case 2:
-		dev, err = evdev.Open(os.Args[1])
+		dev, err = evdev.NewInputDevice(os.Args[1])
 		if err != nil {
 			fmt.Printf("unable to open input device: %s\n", os.Args[1])
 			os.Exit(1)

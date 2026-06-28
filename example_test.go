@@ -5,7 +5,7 @@ import (
 )
 
 func ExampleOpen() {
-	device, _ := Open("/dev/input/event3")
+	device, _ := NewInputDevice("/dev/input/event3")
 	fmt.Println(device)
 }
 
@@ -19,7 +19,7 @@ func ExampleListInputDevices() {
 }
 
 func Example() {
-	device, _ := Open("/dev/input/event3")
+	device, _ := NewInputDevice("/dev/input/event3")
 
 	fmt.Println(device)
 	// InputDevice /dev/input/event3 (fd 3)
