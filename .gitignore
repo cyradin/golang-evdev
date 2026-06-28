@@ -1,3 +1,6 @@
+.vscode
+.idea
+
 *.a
 *.6
 *.out

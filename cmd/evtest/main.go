@@ -109,9 +109,8 @@ func format_event(ev *evdev.InputEvent) string {
 //nolint:forbidigo
 func main() {
 	var (
-		dev    *evdev.InputDevice
-		events []evdev.InputEvent
-		err    error
+		dev *evdev.InputDevice
+		err error
 	)
 
 	//nolint:mnd
@@ -154,16 +153,13 @@ func main() {
 
 	fmt.Printf("Listening for events ...\n")
 
-	for {
-		events, err = dev.Read()
+	for event, err := range dev.Read() {
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		for i := range events {
-			str := format_event(&events[i])
-			fmt.Println(str)
-		}
+		str := format_event(&event)
+		fmt.Println(str)
 	}
 }

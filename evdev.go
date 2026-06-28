@@ -1,8 +1,6 @@
 package evdev
 
 import (
-	"bytes"
-	"encoding/binary"
 	"os"
 	"path/filepath"
 )
@@ -15,38 +13,20 @@ func Open(devnode string) (*InputDevice, error) {
 		return nil, err
 	}
 
-	dev := InputDevice{}
-	dev.Fn = devnode
-	dev.File = f
+	dev := InputDevice{
+		Fn:   devnode,
+		File: f,
+	}
 
-	err = dev.set_device_info()
-	if err != nil {
+	if err := dev.set_device_info(); err != nil {
 		return nil, err
 	}
 
-	err = dev.set_device_capabilities()
-	if err != nil {
+	if err := dev.set_device_capabilities(); err != nil {
 		return nil, err
 	}
 
 	return &dev, nil
-}
-
-// Read and return a single input event.
-func (d *InputDevice) ReadOne() (*InputEvent, error) {
-	event := InputEvent{}
-	buffer := make([]byte, eventsize)
-
-	if _, err := d.File.Read(buffer); err != nil {
-		return &event, err
-	}
-
-	b := bytes.NewBuffer(buffer)
-	if err := binary.Read(b, binary.LittleEndian, &event); err != nil {
-		return &event, err
-	}
-
-	return &event, nil
 }
 
 // Return a list of accessible input device names matched by

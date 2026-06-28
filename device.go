@@ -4,8 +4,8 @@ package evdev
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
+	"iter"
 	"os"
 	"strings"
 	"syscall"
@@ -31,29 +31,9 @@ type InputDevice struct {
 	CapabilitiesFlat map[int][]int
 }
 
-// Read and return a slice of input events from device.
-func (d *InputDevice) Read() ([]InputEvent, error) {
-	events := make([]InputEvent, 16)
-	buffer := make([]byte, eventsize*16)
-
-	if _, err := d.File.Read(buffer); err != nil {
-		return nil, err
-	}
-
-	b := bytes.NewBuffer(buffer)
-	if err := binary.Read(b, binary.LittleEndian, &events); err != nil {
-		return events, err
-	}
-
-	// remove trailing structures
-	for i := range events {
-		if events[i].Time.Sec == 0 {
-			events = events[:i]
-			break
-		}
-	}
-
-	return events, nil
+// Read input events from device.
+func (d *InputDevice) Read() iter.Seq2[InputEvent, error] {
+	return NewEventReader(d.File).Read()
 }
 
 // Get a useful description for an input device. Example:

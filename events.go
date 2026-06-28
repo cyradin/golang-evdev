@@ -1,7 +1,11 @@
 package evdev
 
 import (
+	"encoding/binary"
+	"errors"
 	"fmt"
+	"io"
+	"iter"
 	"syscall"
 	"unsafe"
 )
@@ -11,6 +15,10 @@ type InputEvent struct {
 	Type  uint16          // event type - one of ecodes.EV_*
 	Code  uint16          // event code related to the event type
 	Value int32           // event value related to the event type
+}
+
+func (e InputEvent) IsEmpty() bool {
+	return e.Time.Sec == 0
 }
 
 // Get a useful description for an input event. Example:
@@ -110,4 +118,68 @@ var EventFactory map[uint16]any = make(map[uint16]any)
 func init() {
 	EventFactory[uint16(EV_KEY)] = NewKeyEvent
 	EventFactory[uint16(EV_REL)] = NewRelEvent
+}
+
+type EventReader struct {
+	in     io.Reader
+	events []InputEvent
+	buf    []byte
+}
+
+func NewEventReader(in io.Reader) *EventReader {
+	const bufferSize = 16
+
+	return &EventReader{
+		in:     in,
+		events: make([]InputEvent, bufferSize),
+		buf:    make([]byte, bufferSize*eventsize),
+	}
+}
+
+func (r *EventReader) Read() iter.Seq2[InputEvent, error] {
+	return func(yield func(InputEvent, error) bool) {
+		for {
+			n, err := r.in.Read(r.buf)
+			if n > 0 {
+				if procErr := r.process(n, yield); procErr != nil {
+					yield(InputEvent{}, procErr)
+
+					return
+				}
+			}
+
+			if err != nil {
+				if !errors.Is(err, io.EOF) {
+					yield(InputEvent{}, fmt.Errorf("read error: %w", err))
+				}
+
+				return
+			}
+		}
+	}
+}
+
+func (r *EventReader) process(n int, yield func(InputEvent, error) bool) error {
+	cnt := n / eventsize
+	if cnt == 0 {
+		return nil
+	}
+
+	tempEvents := r.events[:cnt]
+
+	if _, err := binary.Decode(r.buf[:n], binary.LittleEndian, &tempEvents); err != nil {
+		return fmt.Errorf("decode error: %w", err)
+	}
+
+	for i := range cnt {
+		if tempEvents[i].IsEmpty() {
+			break
+		}
+
+		if !yield(tempEvents[i], nil) {
+			return nil
+		}
+	}
+
+	return nil
 }
