@@ -143,13 +143,13 @@ func (d *InputDevice) setDeviceinfo() error {
 		return fmt.Errorf("get device id: %w", err)
 	}
 
-	err = ioctl(d.file.Fd(), uintptr(EVIOCGNAME), unsafe.Pointer(name))
+	err = ioctl(d.file.Fd(), EVIOCGNAME(MAX_NAME_SIZE), unsafe.Pointer(name))
 	if err != 0 {
 		return fmt.Errorf("get device name: %w", err)
 	}
 
 	// it's ok if the topology info is not available
-	_ = ioctl(d.file.Fd(), uintptr(EVIOCGPHYS), unsafe.Pointer(phys))
+	_ = ioctl(d.file.Fd(), EVIOCGPHYS(MAX_NAME_SIZE), unsafe.Pointer(phys))
 
 	d.Name = bytesToString(name[:])
 	d.Phys = bytesToString(phys[:])
