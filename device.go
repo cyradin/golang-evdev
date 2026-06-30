@@ -55,11 +55,11 @@ func NewInputDevice(devnode string) (*InputDevice, error) {
 		file: f,
 	}
 
-	if err := dev.set_device_info(); err != nil {
+	if err := dev.setDeviceinfo(); err != nil {
 		return nil, err
 	}
 
-	if err := dev.set_device_capabilities(); err != nil {
+	if err := dev.setDeviceCapabilities(); err != nil {
 		return nil, err
 	}
 
@@ -75,8 +75,8 @@ func (d *InputDevice) Read() iter.Seq2[InputEvent, error] {
 	return NewEventReader(d.file).Read()
 }
 
-// Gets the event types and event codes that the input device supports.
-func (d *InputDevice) set_device_capabilities() error {
+// setDeviceCapabilities Gets the event types and event codes that the input device supports.
+func (d *InputDevice) setDeviceCapabilities() error {
 	// Capabilities is a map of supported event types to lists of
 	// events e.g: {1: [272, 273, 274, 275], 2: [0, 1, 6, 8]}
 	// capabilities := make(map[int][]int)
@@ -126,8 +126,8 @@ func (d *InputDevice) set_device_capabilities() error {
 	return nil
 }
 
-// An all-in-one function for describing an input device.
-func (d *InputDevice) set_device_info() error {
+// setDeviceinfo An all-in-one function for describing an input device.
+func (d *InputDevice) setDeviceinfo() error {
 	// Corresponds to the input_id struct.
 	type device_info struct {
 		bustype, vendor, product, version uint16
@@ -151,8 +151,8 @@ func (d *InputDevice) set_device_info() error {
 	// it's ok if the topology info is not available
 	_ = ioctl(d.file.Fd(), uintptr(EVIOCGPHYS), unsafe.Pointer(phys))
 
-	d.Name = bytes_to_string(name[:])
-	d.Phys = bytes_to_string(phys[:])
+	d.Name = bytesToString(name[:])
+	d.Phys = bytesToString(phys[:])
 
 	d.Vendor = info.vendor
 	d.Bustype = info.bustype
@@ -204,7 +204,7 @@ func (d *InputDevice) Release() error {
 	return nil
 }
 
-func bytes_to_string(b []byte) string {
+func bytesToString(b []byte) string {
 	idx := bytes.IndexByte(b, 0)
 
 	return string(b[:idx])
