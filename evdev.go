@@ -7,8 +7,8 @@ import (
 
 // Return a list of accessible input device names matched by
 // deviceglob (default '/dev/input/event*').
-func ListInputDevicePaths(device_glob string) ([]string, error) {
-	paths, err := filepath.Glob(device_glob)
+func ListInputDevicePaths(deviceGlob string) ([]string, error) {
+	paths, err := filepath.Glob(deviceGlob)
 	if err != nil {
 		return nil, err
 	}

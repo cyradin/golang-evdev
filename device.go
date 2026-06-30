@@ -42,7 +42,8 @@ type InputDevice struct {
 	file *os.File
 }
 
-// Open an evdev input device.
+// NewInputDevice initialize an evdev input device.
+// The caller must call Close() when finished to avoid leaking the file descriptor.
 func NewInputDevice(devnode string) (*InputDevice, error) {
 	// #nosec G304 -- devnode comes from trusted kernel enumeration (/sys or /proc)
 	f, err := os.Open(devnode)
