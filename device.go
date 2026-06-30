@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"iter"
 	"os"
-	"strings"
 	"syscall"
 	"unsafe"
 )
@@ -74,31 +73,6 @@ func (d *InputDevice) Close() error {
 // Read input events from device.
 func (d *InputDevice) Read() iter.Seq2[InputEvent, error] {
 	return NewEventReader(d.file).Read()
-}
-
-// Get a useful description for an input device. Example:
-//
-//	InputDevice /dev/input/event3 (fd 3)
-//	  name Logitech USB Laser Mouse
-//	  phys usb-0000:00:12.0-2/input0
-//	  bus 0x3, vendor 0x46d, product 0xc069, version 0x110
-//	  events EV_KEY 1, EV_SYN 0, EV_REL 2, EV_MSC 4
-func (d *InputDevice) String() string {
-	evtypes := make([]string, 0, len(d.Capabilities))
-	for ev := range d.Capabilities {
-		evtypes = append(evtypes, fmt.Sprintf("%s %d", ev.Name, ev.Type))
-	}
-
-	evtypes_s := strings.Join(evtypes, ", ")
-
-	return fmt.Sprintf(
-		"InputDevice %s (fd %d)\n"+
-			"  name %s\n"+
-			"  phys %s\n"+
-			"  bus 0x%04x, vendor 0x%04x, product 0x%04x, version 0x%04x\n"+
-			"  events %s",
-		d.Fn, d.file.Fd(), d.Name, d.Phys, d.Bustype,
-		d.Vendor, d.Product, d.Version, evtypes_s)
 }
 
 // Gets the event types and event codes that the input device supports.

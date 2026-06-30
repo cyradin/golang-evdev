@@ -12,6 +12,8 @@ import (
 
 var ErrReadEvents = fmt.Errorf("read events")
 
+var eventsize = int(unsafe.Sizeof(InputEvent{}))
+
 type InputEvent struct {
 	Time  syscall.Timeval // time in seconds since epoch at which event occurred
 	Type  uint16          // event type - one of ecodes.EV_*
@@ -29,97 +31,6 @@ func (e InputEvent) IsEmpty() bool {
 func (e *InputEvent) String() string {
 	return fmt.Sprintf("event at %d.%d, code %02d, type %02d, val %02d",
 		e.Time.Sec, e.Time.Usec, e.Code, e.Type, e.Value)
-}
-
-var eventsize = int(unsafe.Sizeof(InputEvent{}))
-
-type KeyEventState uint8
-
-const (
-	KeyUp   KeyEventState = 0x0
-	KeyDown KeyEventState = 0x1
-	KeyHold KeyEventState = 0x2
-)
-
-// KeyEvents are used to describe state changes of keyboards, buttons,
-// or other key-like devices.
-type KeyEvent struct {
-	Event    *InputEvent
-	Scancode uint16
-	Keycode  uint16
-	State    KeyEventState
-}
-
-func (e *KeyEvent) New(ev *InputEvent) {
-	e.Event = ev
-	e.Keycode = 0 // :todo
-	e.Scancode = ev.Code
-
-	//nolint:mnd
-	switch ev.Value {
-	case 0:
-		e.State = KeyUp
-	case 2:
-		e.State = KeyHold
-	case 1:
-		e.State = KeyDown
-	}
-}
-
-func NewKeyEvent(ev *InputEvent) *KeyEvent {
-	kev := &KeyEvent{}
-	kev.New(ev)
-
-	return kev
-}
-
-func (e *KeyEvent) String() string {
-	state := "unknown"
-
-	switch e.State {
-	case KeyUp:
-		state = "up"
-	case KeyHold:
-		state = "hold"
-	case KeyDown:
-		state = "down"
-	}
-
-	return fmt.Sprintf("key event at %d.%d, %d (%d), (%s)",
-		e.Event.Time.Sec, e.Event.Time.Usec,
-		e.Scancode, e.Event.Code, state)
-}
-
-// RelEvents are used to describe relative axis value changes,
-// e.g. moving the mouse 5 units to the left.
-type RelEvent struct {
-	Event *InputEvent
-}
-
-func (e *RelEvent) New(ev *InputEvent) {
-	e.Event = ev
-}
-
-func NewRelEvent(ev *InputEvent) *RelEvent {
-	rev := &RelEvent{}
-	rev.New(ev)
-
-	return rev
-}
-
-func (e *RelEvent) String() string {
-	return fmt.Sprintf("relative axis event at %d.%d, %s",
-		e.Event.Time.Sec, e.Event.Time.Usec,
-		REL[int(e.Event.Code)])
-}
-
-// TODO: Make this work
-
-var EventFactory map[uint16]any = make(map[uint16]any)
-
-func init() {
-	EventFactory[uint16(EV_KEY)] = NewKeyEvent
-	EventFactory[uint16(EV_REL)] = NewRelEvent
 }
 
 type EventReader struct {
